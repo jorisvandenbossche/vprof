@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+import io
 
 # For Python 2 and Python 3 compatibility.
 try:
@@ -40,7 +41,7 @@ class StatsHandler(http_server.SimpleHTTPRequestHandler):
         """Handles HTTP GET requests."""
         if self.path == self.ROOT_URI:
             res_filename = os.path.dirname(__file__) + '/' + _PROFILE_HTML
-            with open(res_filename) as res_file:
+            with io.open(res_filename, encoding='utf-8') as res_file:
                 output = res_file.read()
             content_type = 'text/html'
         elif self.path == self.PROFILE_URI:
@@ -49,7 +50,7 @@ class StatsHandler(http_server.SimpleHTTPRequestHandler):
         else:
             res_filename = (
                 os.path.dirname(__file__) + '/' + _STATIC_DIR + self.path)
-            with open(res_filename) as res_file:
+            with io.open(res_filename, encoding='utf-8') as res_file:
                 output = res_file.read()
             _, extension = os.path.splitext(self.path)
             content_type = 'text/%s' % extension
@@ -59,9 +60,11 @@ class StatsHandler(http_server.SimpleHTTPRequestHandler):
                           ('Content-Length', len(output))))
         # Convert to bytes for Python 3.
         if sys.version_info[0] >= 3:
-            self.wfile.write(bytes(output, 'utf-8'))
-        else:
+            #self.wfile.write(bytes(output, 'utf-8'))
             self.wfile.write(output)
+        else:
+            print(type(output))
+            self.wfile.write(output.encode('utf-8'))
 
     def _send_response(self, http_code, message=None, headers=None):
         """Sends HTTP response code, message and headers."""
@@ -82,7 +85,7 @@ def start(host, port, profile_stats):
     """
     stats_handler = functools.partial(
         StatsHandler, profile_stats)
-    subprocess.call(['open', 'http://%s:%s' % (host, port)])
+    #subprocess.call(['open', 'http://%s:%s' % (host, port)])
     try:
         _StatsServer((host, port), stats_handler).serve_forever()
     except KeyboardInterrupt:
